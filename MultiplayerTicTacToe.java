@@ -1,5 +1,3 @@
-// MultiplayerTicTacToe.java
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
@@ -13,6 +11,7 @@ public class MultiplayerTicTacToe extends JFrame {
     String playerSymbol;
     String opponentSymbol;
     boolean myTurn = false;
+    boolean gameOver = false;
 
     JButton[][] board = new JButton[3][3];
     JPanel boardPanel = new JPanel();
@@ -55,21 +54,7 @@ public class MultiplayerTicTacToe extends JFrame {
         bottomPanel.setBackground(new Color(30, 30, 30));
         bottomPanel.setLayout(new FlowLayout());
 
-        JButton leaveButton = new JButton("Leave Match");
-        leaveButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        leaveButton.setBackground(new Color(244, 67, 54));
-        leaveButton.setForeground(Color.WHITE);
-        leaveButton.setFocusPainted(false);
-        leaveButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        leaveButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        leaveButton.addActionListener(e -> {
-            out.println("QUIT");
-            out.flush();
-            JOptionPane.showMessageDialog(this, "You left the match.");
-            this.dispose();
-            new HomePage();
-        });
-
+        JButton leaveButton = createLeaveButton();
         bottomPanel.add(leaveButton);
         add(bottomPanel, BorderLayout.SOUTH);
 
@@ -94,6 +79,30 @@ public class MultiplayerTicTacToe extends JFrame {
         setVisible(true);
     }
 
+    private JButton createLeaveButton() {
+        JButton leaveButton = new JButton("Leave Match");
+        leaveButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        leaveButton.setBackground(new Color(244, 67, 54));
+        leaveButton.setForeground(Color.WHITE);
+        leaveButton.setFocusPainted(false);
+        leaveButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        leaveButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        leaveButton.addActionListener(e -> {
+            try {
+                if (out != null) out.println("QUIT");
+                out.flush();
+                if (socket != null) socket.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            } finally {
+                JOptionPane.showMessageDialog(this, "You left the match.");
+                this.dispose();
+                new HomePage();
+            }
+        });
+        return leaveButton;
+    }
+
     private void setupNetwork() {
         try {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -111,7 +120,6 @@ public class MultiplayerTicTacToe extends JFrame {
                 try {
                     String msg;
                     while ((msg = in.readLine()) != null) {
-                        System.out.println("Received message: " + msg);
                         final String receivedMsg = msg;
                         SwingUtilities.invokeLater(() -> handleIncomingMessage(receivedMsg));
                     }
@@ -133,8 +141,6 @@ public class MultiplayerTicTacToe extends JFrame {
     }
 
     private void handleIncomingMessage(String msg) {
-        System.out.println("Handling: " + msg);
-
         if (msg.startsWith("MOVE")) {
             int r = Character.getNumericValue(msg.charAt(5));
             int c = Character.getNumericValue(msg.charAt(7));
@@ -142,44 +148,33 @@ public class MultiplayerTicTacToe extends JFrame {
             board[r][c].setEnabled(false);
             board[r][c].setForeground(opponentSymbol.equals("X") ? Color.CYAN : Color.RED);
             myTurn = true;
-            statusLabel.setText("Your Turn (" + playerSymbol + ")");
+            if (!gameOver) statusLabel.setText("Your Turn (" + playerSymbol + ")");
             checkWinner();
         } else if (msg.equals("QUIT")) {
             JOptionPane.showMessageDialog(this, "Opponent left the match.");
             this.dispose();
             new HomePage();
         } else if (msg.equals("RESTART_REQUEST")) {
-            System.out.println("Opponent requested a restart.");
+            int choice = JOptionPane.showConfirmDialog(
+                    this,
+                    "Opponent requested a rematch.\nDo you want to restart the match?",
+                    "Restart Request",
+                    JOptionPane.YES_NO_OPTION
+            );
 
-            // Corrected: dialog shown on EDT
-            SwingUtilities.invokeLater(() -> {
-                int choice = JOptionPane.showConfirmDialog(
-                        this,
-                        "Opponent requested a rematch.\nDo you want to restart the match?",
-                        "Restart Request",
-                        JOptionPane.YES_NO_OPTION
-                );
-
-                if (choice == JOptionPane.YES_OPTION) {
-                    System.out.println("Restart accepted.");
-                    out.println("RESTART_ACCEPTED");
-                    out.flush();
-                    restartGame();
-                } else {
-                    System.out.println("Restart declined.");
-                    // Optional: send RESTART_DECLINED
-                }
-            });
-
+            if (choice == JOptionPane.YES_OPTION) {
+                out.println("RESTART_ACCEPTED");
+                out.flush();
+                restartGame();
+            }
         } else if (msg.equals("RESTART_ACCEPTED")) {
-            System.out.println("Opponent accepted restart.");
             JOptionPane.showMessageDialog(this, "Opponent accepted restart. Game will reset.");
             restartGame();
         }
     }
 
     private void makeMove(int r, int c) {
-        if (!myTurn || !board[r][c].getText().equals("")) return;
+        if (!myTurn || !board[r][c].getText().equals("") || gameOver) return;
 
         board[r][c].setText(playerSymbol);
         board[r][c].setEnabled(false);
@@ -192,6 +187,8 @@ public class MultiplayerTicTacToe extends JFrame {
     }
 
     private void checkWinner() {
+        if (gameOver) return;
+
         for (int i = 0; i < 3; i++) {
             if (checkLine(board[i][0], board[i][1], board[i][2])) return;
             if (checkLine(board[0][i], board[1][i], board[2][i])) return;
@@ -211,11 +208,13 @@ public class MultiplayerTicTacToe extends JFrame {
         }
 
         if (tie) {
+            gameOver = true;
             statusLabel.setText("It's a Tie!");
             for (JButton[] row : board) {
                 for (JButton tile : row) {
                     tile.setBackground(Color.DARK_GRAY);
                     tile.setForeground(Color.ORANGE);
+                    tile.setEnabled(false);
                 }
             }
             showGameOverButtons("It's a Tie!");
@@ -229,32 +228,29 @@ public class MultiplayerTicTacToe extends JFrame {
             b1.setBackground(new Color(76, 175, 80));
             b2.setBackground(new Color(76, 175, 80));
             b3.setBackground(new Color(76, 175, 80));
-            statusLabel.setText(b1.getText() + " Wins!");
-            showGameOverButtons(b1.getText() + " Wins!");
+            gameOver = true;
+            String winner = b1.getText();
+            statusLabel.setText(winner + " Wins!");
+            showGameOverButtons(winner + " Wins!");
             return true;
         }
         return false;
     }
 
     private void showGameOverButtons(String message) {
-        for (JButton[] row : board) {
-            for (JButton tile : row) {
+        for (JButton[] row : board)
+            for (JButton tile : row)
                 tile.setEnabled(false);
-            }
-        }
 
         bottomPanel.removeAll();
 
         JButton restartButton = new JButton("Restart Match");
-        JButton menuButton = new JButton("Main Menu");
-
         restartButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
         restartButton.setBackground(new Color(33, 150, 243));
         restartButton.setForeground(Color.WHITE);
         restartButton.setFocusPainted(false);
         restartButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         restartButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-
         restartButton.addActionListener(e -> {
             out.println("RESTART_REQUEST");
             out.flush();
@@ -262,13 +258,13 @@ public class MultiplayerTicTacToe extends JFrame {
             restartButton.setEnabled(false);
         });
 
+        JButton menuButton = new JButton("Main Menu");
         menuButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
         menuButton.setBackground(new Color(244, 67, 54));
         menuButton.setForeground(Color.WHITE);
         menuButton.setFocusPainted(false);
         menuButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         menuButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-
         menuButton.addActionListener(e -> {
             try {
                 if (out != null) out.println("QUIT");
@@ -293,36 +289,19 @@ public class MultiplayerTicTacToe extends JFrame {
     }
 
     private void restartGame() {
-        for (int r = 0; r < 3; r++) {
+        for (int r = 0; r < 3; r++)
             for (int c = 0; c < 3; c++) {
                 board[r][c].setText("");
                 board[r][c].setEnabled(true);
                 board[r][c].setBackground(new Color(50, 50, 50));
             }
-        }
 
+        gameOver = false;
         myTurn = playerSymbol.equals("X");
         statusLabel.setText(myTurn ? "Your Turn (" + playerSymbol + ")" : "Waiting for opponent...");
 
         bottomPanel.removeAll();
-
-        JButton leaveButton = new JButton("Leave Match");
-        leaveButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        leaveButton.setBackground(new Color(244, 67, 54));
-        leaveButton.setForeground(Color.WHITE);
-        leaveButton.setFocusPainted(false);
-        leaveButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        leaveButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-
-        leaveButton.addActionListener(e -> {
-            out.println("QUIT");
-            out.flush();
-            JOptionPane.showMessageDialog(this, "You left the match.");
-            this.dispose();
-            new HomePage();
-        });
-
-        bottomPanel.add(leaveButton);
+        bottomPanel.add(createLeaveButton());
         bottomPanel.revalidate();
         bottomPanel.repaint();
     }
