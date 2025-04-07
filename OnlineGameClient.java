@@ -6,7 +6,7 @@ public class OnlineGameClient {
     public static void startClient(String action, String gameId) {
         try {
             // Use server IP address here
-            Socket socket = new Socket("192.168.1.3", 5000);
+            Socket socket = new Socket("172.18.128.252", 5000);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 

@@ -1,3 +1,5 @@
+// MultiplayerTicTacToe.java
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
@@ -35,7 +37,6 @@ public class MultiplayerTicTacToe extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Top Label Panel
         statusLabel.setBackground(new Color(30, 30, 30));
         statusLabel.setForeground(Color.WHITE);
         statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 36));
@@ -46,13 +47,11 @@ public class MultiplayerTicTacToe extends JFrame {
         textPanel.add(statusLabel, BorderLayout.CENTER);
         add(textPanel, BorderLayout.NORTH);
 
-        // Board Panel
         boardPanel.setLayout(new GridLayout(3, 3, 5, 5));
         boardPanel.setBackground(new Color(30, 30, 30));
         boardPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(boardPanel, BorderLayout.CENTER);
 
-        // Bottom Panel
         bottomPanel.setBackground(new Color(30, 30, 30));
         bottomPanel.setLayout(new FlowLayout());
 
@@ -63,7 +62,6 @@ public class MultiplayerTicTacToe extends JFrame {
         leaveButton.setFocusPainted(false);
         leaveButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         leaveButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-
         leaveButton.addActionListener(e -> {
             out.println("QUIT");
             out.flush();
@@ -75,7 +73,6 @@ public class MultiplayerTicTacToe extends JFrame {
         bottomPanel.add(leaveButton);
         add(bottomPanel, BorderLayout.SOUTH);
 
-        // Tiles
         for (int r = 0; r < 3; r++) {
             for (int c = 0; c < 3; c++) {
                 JButton tile = new JButton();
@@ -114,6 +111,7 @@ public class MultiplayerTicTacToe extends JFrame {
                 try {
                     String msg;
                     while ((msg = in.readLine()) != null) {
+                        System.out.println("Received message: " + msg);
                         final String receivedMsg = msg;
                         SwingUtilities.invokeLater(() -> handleIncomingMessage(receivedMsg));
                     }
@@ -135,6 +133,8 @@ public class MultiplayerTicTacToe extends JFrame {
     }
 
     private void handleIncomingMessage(String msg) {
+        System.out.println("Handling: " + msg);
+
         if (msg.startsWith("MOVE")) {
             int r = Character.getNumericValue(msg.charAt(5));
             int c = Character.getNumericValue(msg.charAt(7));
@@ -149,6 +149,9 @@ public class MultiplayerTicTacToe extends JFrame {
             this.dispose();
             new HomePage();
         } else if (msg.equals("RESTART_REQUEST")) {
+            System.out.println("Opponent requested a restart.");
+
+            // Corrected: dialog shown on EDT
             SwingUtilities.invokeLater(() -> {
                 int choice = JOptionPane.showConfirmDialog(
                         this,
@@ -158,16 +161,20 @@ public class MultiplayerTicTacToe extends JFrame {
                 );
 
                 if (choice == JOptionPane.YES_OPTION) {
+                    System.out.println("Restart accepted.");
                     out.println("RESTART_ACCEPTED");
                     out.flush();
                     restartGame();
+                } else {
+                    System.out.println("Restart declined.");
+                    // Optional: send RESTART_DECLINED
                 }
             });
+
         } else if (msg.equals("RESTART_ACCEPTED")) {
-            SwingUtilities.invokeLater(() -> {
-                JOptionPane.showMessageDialog(this, "Opponent accepted restart. Game will reset.");
-                restartGame();
-            });
+            System.out.println("Opponent accepted restart.");
+            JOptionPane.showMessageDialog(this, "Opponent accepted restart. Game will reset.");
+            restartGame();
         }
     }
 
@@ -178,6 +185,7 @@ public class MultiplayerTicTacToe extends JFrame {
         board[r][c].setEnabled(false);
         board[r][c].setForeground(playerSymbol.equals("X") ? Color.CYAN : Color.RED);
         out.println("MOVE " + r + " " + c);
+        out.flush();
         myTurn = false;
         statusLabel.setText("Waiting for opponent...");
         checkWinner();
