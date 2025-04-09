@@ -1,4 +1,6 @@
 import java.awt.*;
+// import java.io.IOException;
+
 // import java.awt.event.*;
 import javax.swing.*;
 
@@ -54,19 +56,22 @@ public class TicTacToe {
         resetButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         resetButton.addActionListener(e -> resetGame());
 
-        JButton quitButton = new JButton("Quit Game");
-        quitButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        quitButton.setBackground(new Color(244, 67, 54));
-        quitButton.setForeground(Color.WHITE);
-        quitButton.setFocusPainted(false);
-        quitButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        quitButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        quitButton.addActionListener(e -> System.exit(0));
+        JButton menuButton = new JButton("Main Menu");
+        menuButton.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        menuButton.setBackground(new Color(244, 67, 54));
+        menuButton.setForeground(Color.WHITE);
+        menuButton.setFocusPainted(false);
+        menuButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        menuButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        menuButton.addActionListener(e -> {
+                frame.dispose();
+                new HomePage();
+        });
 
         bottomPanel.setBackground(new Color(30, 30, 30));
         bottomPanel.setLayout(new FlowLayout());
         bottomPanel.add(resetButton);
-        bottomPanel.add(quitButton);
+        bottomPanel.add(menuButton);
         frame.add(bottomPanel, BorderLayout.SOUTH);
 
         // Tiles

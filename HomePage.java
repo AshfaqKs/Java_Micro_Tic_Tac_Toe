@@ -23,7 +23,7 @@ public class HomePage extends JFrame {
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         // Start Button styling
-        JButton startButton = new JButton("Start Game");
+        JButton startButton = new JButton("Offline Mode");
         styleButton(startButton, new Color(0, 200, 83)); // Green button
 
         startButton.addActionListener(new ActionListener() {

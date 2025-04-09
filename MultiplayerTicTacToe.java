@@ -12,6 +12,8 @@ public class MultiplayerTicTacToe extends JFrame {
     String opponentSymbol;
     boolean myTurn = false;
     boolean gameOver = false;
+    private boolean intentionallyLeft = false;
+
 
     JButton[][] board = new JButton[3][3];
     JPanel boardPanel = new JPanel();
@@ -54,8 +56,7 @@ public class MultiplayerTicTacToe extends JFrame {
         bottomPanel.setBackground(new Color(30, 30, 30));
         bottomPanel.setLayout(new FlowLayout());
 
-        JButton leaveButton = createLeaveButton();
-        bottomPanel.add(leaveButton);
+        bottomPanel.add(createLeaveButton());
         add(bottomPanel, BorderLayout.SOUTH);
 
         for (int r = 0; r < 3; r++) {
@@ -88,6 +89,7 @@ public class MultiplayerTicTacToe extends JFrame {
         leaveButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         leaveButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         leaveButton.addActionListener(e -> {
+            intentionallyLeft = true;
             try {
                 if (out != null) out.println("QUIT");
                 out.flush();
@@ -95,7 +97,7 @@ public class MultiplayerTicTacToe extends JFrame {
             } catch (IOException ex) {
                 ex.printStackTrace();
             } finally {
-                JOptionPane.showMessageDialog(this, "You left the match.");
+                showStyledMessage(this, "You left the match.", "Match End", JOptionPane.INFORMATION_MESSAGE);
                 this.dispose();
                 new HomePage();
             }
@@ -124,11 +126,13 @@ public class MultiplayerTicTacToe extends JFrame {
                         SwingUtilities.invokeLater(() -> handleIncomingMessage(receivedMsg));
                     }
                 } catch (IOException e) {
-                    SwingUtilities.invokeLater(() -> {
-                        JOptionPane.showMessageDialog(this, "Connection lost.");
-                        this.dispose();
-                        new HomePage();
-                    });
+                    if (!intentionallyLeft){
+                        SwingUtilities.invokeLater(() -> {
+                            showStyledMessage(this, "Connection lost.", "Disconnected", JOptionPane.ERROR_MESSAGE);
+                            this.dispose();
+                            new HomePage();
+                        });
+                    }
                 }
             });
 
@@ -151,15 +155,14 @@ public class MultiplayerTicTacToe extends JFrame {
             if (!gameOver) statusLabel.setText("Your Turn (" + playerSymbol + ")");
             checkWinner();
         } else if (msg.equals("QUIT")) {
-            JOptionPane.showMessageDialog(this, "Opponent left the match.");
+            showStyledMessage(this, "Opponent left the match.", "Opponent Left", JOptionPane.WARNING_MESSAGE);
             this.dispose();
             new HomePage();
         } else if (msg.equals("RESTART_REQUEST")) {
-            int choice = JOptionPane.showConfirmDialog(
-                    this,
-                    "Opponent requested a rematch.\nDo you want to restart the match?",
-                    "Restart Request",
-                    JOptionPane.YES_NO_OPTION
+            int choice = showStyledConfirm(
+                this,
+                "Opponent requested a rematch.\nDo you want to restart the match?",
+                "Restart Request"
             );
 
             if (choice == JOptionPane.YES_OPTION) {
@@ -168,7 +171,7 @@ public class MultiplayerTicTacToe extends JFrame {
                 restartGame();
             }
         } else if (msg.equals("RESTART_ACCEPTED")) {
-            JOptionPane.showMessageDialog(this, "Opponent accepted restart. Game will reset.");
+            showStyledMessage(this, "Opponent accepted restart. Game will reset.", "Rematch", JOptionPane.INFORMATION_MESSAGE);
             restartGame();
         }
     }
@@ -210,21 +213,20 @@ public class MultiplayerTicTacToe extends JFrame {
         if (tie) {
             gameOver = true;
             statusLabel.setText("It's a Tie!");
-            for (JButton[] row : board) {
+            for (JButton[] row : board)
                 for (JButton tile : row) {
                     tile.setBackground(Color.DARK_GRAY);
                     tile.setForeground(Color.ORANGE);
                     tile.setEnabled(false);
                 }
-            }
             showGameOverButtons("It's a Tie!");
         }
     }
 
     private boolean checkLine(JButton b1, JButton b2, JButton b3) {
         if (!b1.getText().equals("") &&
-                b1.getText().equals(b2.getText()) &&
-                b2.getText().equals(b3.getText())) {
+            b1.getText().equals(b2.getText()) &&
+            b2.getText().equals(b3.getText())) {
             b1.setBackground(new Color(76, 175, 80));
             b2.setBackground(new Color(76, 175, 80));
             b3.setBackground(new Color(76, 175, 80));
@@ -266,6 +268,7 @@ public class MultiplayerTicTacToe extends JFrame {
         menuButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         menuButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         menuButton.addActionListener(e -> {
+            intentionallyLeft=true;
             try {
                 if (out != null) out.println("QUIT");
                 out.flush();
@@ -304,5 +307,27 @@ public class MultiplayerTicTacToe extends JFrame {
         bottomPanel.add(createLeaveButton());
         bottomPanel.revalidate();
         bottomPanel.repaint();
+    }
+
+    // ==============================
+    // 🎨 Custom Dialog Styling
+    // ==============================
+
+    private void showStyledMessage(Component parent, String message, String title, int messageType) {
+        UIManager.put("OptionPane.messageFont", new Font("Segoe UI", Font.PLAIN, 18));
+        UIManager.put("OptionPane.buttonFont", new Font("Segoe UI", Font.BOLD, 16));
+        UIManager.put("OptionPane.minimumSize", new Dimension(300, 150));
+        UIManager.put("OptionPane.messageForeground", Color.DARK_GRAY);
+
+        JOptionPane.showMessageDialog(parent, message, title, messageType);
+    }
+
+    private int showStyledConfirm(Component parent, String message, String title) {
+        UIManager.put("OptionPane.messageFont", new Font("Segoe UI", Font.PLAIN, 18));
+        UIManager.put("OptionPane.buttonFont", new Font("Segoe UI", Font.BOLD, 16));
+        UIManager.put("OptionPane.minimumSize", new Dimension(300, 150));
+        UIManager.put("OptionPane.messageForeground", Color.DARK_GRAY);
+
+        return JOptionPane.showConfirmDialog(parent, message, title, JOptionPane.YES_NO_OPTION);
     }
 }

@@ -74,23 +74,20 @@ public class OnlineGameServer {
         try {
             BufferedReader in1 = new BufferedReader(new InputStreamReader(player1.getInputStream()));
             PrintWriter out1 = new PrintWriter(player1.getOutputStream(), true);
-
+    
             BufferedReader in2 = new BufferedReader(new InputStreamReader(player2.getInputStream()));
             PrintWriter out2 = new PrintWriter(player2.getOutputStream(), true);
-
-            String move;
-            boolean turn = true; // player1 starts
-
-            while ((move = (turn ? in1 : in2).readLine()) != null) {
-                if (turn) {
-                    out2.println(move); // send player1's move to player2
-                } else {
-                    out1.println(move); // send player2's move to player1
-                }
-                turn = !turn;
-            }
-
-        } catch (IOException e) {
+    
+            Thread t1 = new Thread(() -> forwardMessages(in1, out2));
+            Thread t2 = new Thread(() -> forwardMessages(in2, out1));
+    
+            t1.start();
+            t2.start();
+    
+            t1.join();
+            t2.join();
+    
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
@@ -99,6 +96,19 @@ public class OnlineGameServer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+    
+    private static void forwardMessages(BufferedReader in, PrintWriter out) {
+        String msg;
+        try {
+            while ((msg = in.readLine()) != null) {
+                System.out.println("Forwarding message: " + msg);
+                out.println(msg);
+                out.flush();
+            }
+        } catch (IOException e) {
+            System.out.println("Client disconnected.");
         }
     }
 }
