@@ -144,6 +144,51 @@ public class MultiplayerTicTacToe extends JFrame {
         }
     }
 
+    // private void showRematchPrompt() {
+    //     bottomPanel.removeAll();
+    
+    //     JLabel prompt = new JLabel("Opponent requested a rematch.");
+    //     prompt.setForeground(Color.WHITE);
+    //     prompt.setFont(new Font("Segoe UI", Font.PLAIN, 20));
+    
+    //     JButton acceptBtn = new JButton("Accept");
+    //     acceptBtn.setBackground(new Color(76, 175, 80));
+    //     acceptBtn.setForeground(Color.WHITE);
+    //     acceptBtn.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    //     acceptBtn.setFocusPainted(false);
+    //     acceptBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    //     acceptBtn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+    
+    //     JButton declineBtn = new JButton("Decline");
+    //     declineBtn.setBackground(new Color(244, 67, 54));
+    //     declineBtn.setForeground(Color.WHITE);
+    //     declineBtn.setFont(new Font("Segoe UI", Font.BOLD, 18));
+    //     declineBtn.setFocusPainted(false);
+    //     declineBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    //     declineBtn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+    
+    //     acceptBtn.addActionListener(e -> {
+    //         out.println("RESTART_ACCEPTED");
+    //         out.flush();
+    //         restartGame();
+    //     });
+    
+    //     declineBtn.addActionListener(e -> {
+    //         bottomPanel.removeAll();
+    //         bottomPanel.add(createLeaveButton());
+    //         bottomPanel.revalidate();
+    //         bottomPanel.repaint();
+    //         statusLabel.setText("Waiting for opponent...");
+    //     });
+    
+    //     bottomPanel.add(prompt);
+    //     bottomPanel.add(acceptBtn);
+    //     bottomPanel.add(declineBtn);
+    //     bottomPanel.revalidate();
+    //     bottomPanel.repaint();
+    // }
+    
+
     private void handleIncomingMessage(String msg) {
         if (msg.startsWith("MOVE")) {
             int r = Character.getNumericValue(msg.charAt(5));
@@ -159,6 +204,8 @@ public class MultiplayerTicTacToe extends JFrame {
             this.dispose();
             new HomePage();
         } else if (msg.equals("RESTART_REQUEST")) {
+            // showRematchPrompt();
+            
             int choice = showStyledConfirm(
                 this,
                 "Opponent requested a rematch.\nDo you want to restart the match?",
