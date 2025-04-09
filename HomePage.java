@@ -23,7 +23,7 @@ public class HomePage extends JFrame {
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         // Start Button styling
-        JButton startButton = new JButton("Single Player");
+        JButton startButton = new JButton("Offline Mode");
         styleButton(startButton, new Color(0, 200, 83)); // Green button
 
         startButton.addActionListener(new ActionListener() {
@@ -34,7 +34,7 @@ public class HomePage extends JFrame {
         });
 
         // Online mode
-        JButton onlineButton = new JButton("Multiplayer");
+        JButton onlineButton = new JButton("Online Mode");
         onlineButton.setFont(new Font("Arial", Font.PLAIN, 18));
         styleButton(onlineButton, new Color(0, 0, 190)); // Blue button
 
